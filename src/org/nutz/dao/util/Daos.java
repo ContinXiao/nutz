@@ -39,6 +39,7 @@ import org.nutz.dao.entity.annotation.Table;
 import org.nutz.dao.impl.NutDao;
 import org.nutz.dao.impl.entity.field.ManyManyLinkField;
 import org.nutz.dao.impl.jdbc.AbstractJdbcExpert;
+import org.nutz.dao.impl.sql.SqlFormat;
 import org.nutz.dao.jdbc.JdbcExpert;
 import org.nutz.dao.jdbc.Jdbcs;
 import org.nutz.dao.jdbc.ValueAdaptor;
@@ -47,6 +48,7 @@ import org.nutz.dao.sql.Sql;
 import org.nutz.dao.sql.SqlCallback;
 import org.nutz.lang.Lang;
 import org.nutz.lang.Strings;
+import org.nutz.lang.random.R;
 import org.nutz.lang.segment.CharSegment;
 import org.nutz.lang.util.Callback2;
 import org.nutz.log.Log;
@@ -353,10 +355,12 @@ public abstract class Daos {
      * 查询某sql的结果条数
      */
     public static long queryCount(Dao dao, String sql) {
+    	String tmpTable = "as _nutz_tmp";
+    	if (!dao.meta().isOracle())
+    		tmpTable += "_" + R.UU32();
         Sql sql2 = Sqls.fetchInt("select count(1) from ("
                                  + sql
-                                 + ") as _nutz_tmp_"
-                                 + System.currentTimeMillis());
+                                 + ")" + tmpTable);
         dao.execute(sql2);
         return sql2.getInt();
     }
@@ -1026,6 +1030,17 @@ public abstract class Daos {
         });
         return name[0];
     }
+
+    private static SqlFormat sqlFormat = SqlFormat.full;
+
+    public static SqlFormat getSqlFormat() {
+        return sqlFormat;
+    }
+
+    public static void setSqlFormat(SqlFormat sqlFormat) {
+        Daos.sqlFormat = sqlFormat;
+    }
+    
 }
 
 class ExtDaoInvocationHandler implements InvocationHandler {
